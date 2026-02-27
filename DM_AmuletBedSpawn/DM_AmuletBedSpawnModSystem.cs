@@ -11,7 +11,7 @@ namespace DM_AmuletBedSpawn
 {
     public class DM_AmuletBedSpawnModSystem : ModSystem
     {
-        internal static readonly Harmony _harmony = new("dm_amuletbedspawn");
+        internal static readonly Harmony _harmony = new("amuletbedspawn");
 
         public override void StartServerSide(ICoreServerAPI api)
         {

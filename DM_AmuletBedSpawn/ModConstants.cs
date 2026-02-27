@@ -6,6 +6,6 @@ namespace DM_AmuletBedSpawn
 {
     internal static class ModConstants
     {
-        public const string BedIsMissing = "DM_AmuletBedSpawn:BedMissing";
+        public const string BedIsMissing = "AmuletBedSpawn:BedMissing";
     }
 }

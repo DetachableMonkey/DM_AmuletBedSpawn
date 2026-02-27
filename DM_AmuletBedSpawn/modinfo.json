@@ -1,7 +1,7 @@
 {
   "$schema": "https://moddbcdn.vintagestory.at/schema/modinfo.latest.json",
   "type": "Code",
-  "modid": "dm_amuletbedspawn",
+  "modid": "amuletbedspawn",
   "name": "Amulet Bed Spawn",
   "authors": [
     "DetachableMonkey"
