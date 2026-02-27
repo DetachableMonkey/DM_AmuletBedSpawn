@@ -1,0 +1,14 @@
+{
+  "$schema": "https://moddbcdn.vintagestory.at/schema/modinfo.latest.json",
+  "type": "Code",
+  "modid": "dm_amuletbedspawn",
+  "name": "Amulet Bed Spawn",
+  "authors": [
+    "DetachableMonkey"
+  ],
+  "description": "If you sleep in a bed (any type) and are wearing a Temporal Gear Amulet or a Rusty Gear Amulet, your spawn will be set to that location.",
+  "version": "1.0.1",
+  "dependencies": {
+    "game": "1.22.0-pre.1"
+  }
+}

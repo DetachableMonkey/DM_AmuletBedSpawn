@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DM_AmuletBedSpawn/DM_AmuletBedSpawn.csproj" />
+  <Project Path="ZZCakeBuild/CakeBuild.csproj" />
+</Solution>
