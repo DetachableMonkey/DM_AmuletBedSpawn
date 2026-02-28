@@ -10,7 +10,7 @@ namespace DM_AmuletBedSpawn.Patches
 {
     [HarmonyPatchCategory("Server")]
     [HarmonyPatch(typeof(BlockBed), nameof(BlockBed.OnBlockRemoved))]
-    public class BlockBedBlockRemovedPathc
+    public class BlockBedBlockRemovedPatch
     {
         public static void Postfix(BlockBed __instance, IWorldAccessor world, BlockPos pos)
         {
