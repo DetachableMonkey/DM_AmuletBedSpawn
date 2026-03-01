@@ -19,10 +19,15 @@ namespace DM_AmuletBedSpawn
 
         public override void StartServerSide(ICoreServerAPI api)
         {
+            // Read this mod's config file.
             Config = ModConfig.ReadConfig(api);
+
+            // Apply Harmony patches to the game code.
             _harmony.PatchAll();
+
             api.Event.PlayerRespawn += OnPlayerRespawn;
             api.Event.PlayerDeath += OnPlayerDeath;
+            
             base.StartServerSide(api);
         }
 
@@ -79,9 +84,6 @@ namespace DM_AmuletBedSpawn
         /// <summary>
         /// Determines whether the specified player is currently wearing a recognized amulet.
         /// </summary>
-        /// <remarks>This method searches all inventories associated with the player for specific amulet
-        /// items. If the player is null or has no inventories, the method returns false and amuletType is set to
-        /// AmuletType.None.</remarks>
         /// <param name="player">The player whose inventories are checked for the presence of an amulet. This parameter must not be null.</param>
         /// <param name="amuletType">When this method returns, contains the <see cref="AmuletType"/> of the amulet found if the player is
         /// wearing one; otherwise, <see cref="AmuletType.None"/>.</param>
@@ -119,9 +121,14 @@ namespace DM_AmuletBedSpawn
             return false;
         }
 
+        /// <summary>
+        /// This event fires immediately after the player respawns, but before they have control of their character again.
+        /// </summary>
+        /// <param name="byPlayer"></param>
         private void OnPlayerRespawn(IServerPlayer byPlayer)
         {
             if (byPlayer == null) { return; }
+            if (!Config.AmuletsCanBreakAfterRespawn) { return; }
 
             // Verify that the player set their spawn point with this mod. If not, just proceed with normal respawn behavior.
             if (byPlayer.WorldData.GetModData<bool>(ModConstants.SpawnSetByAmuletBedSpawnMod))
@@ -146,17 +153,41 @@ namespace DM_AmuletBedSpawn
                 // If the player is wearing the correct amulet, lets see if their amulet is going to break during this respawn.
                 if (wearingCorrectAmulet)
                 {
-                    // for testing, lets just break the amulet and delete their spawn point.
-                    BreakPlayersAmulet(byPlayer, amuletType);
-                    ClearPlayersSpawnPoint(byPlayer);
-                    byPlayer.SendLocalisedMessage(0, $"(Amulet Bed Spawn) Your {amuletType.ToItemName().ToLowerInvariant()} has broken! Spawn point removed.");
+                    // Get a random number between 0 and 1.
+                    double random = byPlayer.Entity.World.Rand.NextDouble();
+
+                    // Convert Config.RustyGearAmuletBreakChancePct to a percentage.
+                    double breakChance = 0;
+
+                    if (amuletType == AmuletType.RustyGearAmulet)
+                    {
+                        breakChance = Config.RustyGearAmuletBreakChancePct / 100d;
+                    }
+                    else if (amuletType == AmuletType.TemporalGearAmulet)
+                    {
+                        breakChance = Config.TemporalGearAmuletBreakChancePct / 100d;
+                    }
+
+                    // If the random number is less than the break chance, break the amulet and clear their spawn point.
+                    if (random < breakChance)
+                    {
+                        BreakPlayersAmulet(byPlayer, amuletType);
+                        ClearPlayersSpawnPoint(byPlayer);
+                        byPlayer.SendLocalisedMessage(0, $"(Amulet Bed Spawn) Your {amuletType.ToItemName().ToLowerInvariant()} has broken! Spawn point removed.");
+                    }
                 }
             }
         }
 
+        /// <summary>
+        /// This will remove/delete the amulet from the player's neck slot.
+        /// </summary>
+        /// <param name="player"></param>
+        /// <param name="amuletType"></param>
         private void BreakPlayersAmulet(IServerPlayer player, AmuletType amuletType)
         {
             if (player == null) { return; }
+            if (!Config.AmuletsCanBreakAfterRespawn) { return; }
 
             string amuletItemName = amuletType.ToItemName();
 
@@ -181,6 +212,7 @@ namespace DM_AmuletBedSpawn
         private void OnPlayerDeath(IServerPlayer byPlayer, DamageSource damageSource)
         {
             if (byPlayer == null) { return; }
+            if (!Config.AmuletsCanBreakAfterRespawn) { return; }
 
             // If the spawn point was set by an amulet and they are not wearing the correct amulet, clear the spawn point and send them a message.
             if (byPlayer.WorldData.GetModData<bool>(ModConstants.SpawnSetByAmuletBedSpawnMod))
@@ -189,23 +221,26 @@ namespace DM_AmuletBedSpawn
 
                 if (!wearingAmulet)
                 {
+                    // This player isn't wearing any amulet at all. Penalize them by clearing their spawn point and send them a message.
                     ClearPlayersSpawnPoint(byPlayer);
                     byPlayer.SendLocalisedMessage(0, "(Amulet Bed Spawn) You died without wearing your amulet! Spawn point removed.");
                 }
                 else
                 {
-                    // They are wearing an amulet. Lets check to see if it's the correct amulet. If not, clear the spawn point and send them a message.
+                    // They are wearing an amulet. If they set their spawn with a temporal gear amulet, make sure they are wearing one with the exact type.
+                    // If they aren't , then clear their spawn point and send them a message.
                     if (byPlayer.WorldData.GetModData<bool>(ModConstants.TemporalAmuletUsed) && amuletType != AmuletType.TemporalGearAmulet)
                     {
                         ClearPlayersSpawnPoint(byPlayer);
-                        byPlayer.SendLocalisedMessage(0, "(Amulet Bed Spawn) You died without wearing the correct amulet! Spawn point removed.");
+                        byPlayer.SendLocalisedMessage(0, "(Amulet Bed Spawn) You died without wearing your temporal gear amulet!");
+                        byPlayer.SendLocalisedMessage(0, "(Amulet Bed Spawn) Spawn point removed.");
+                        return;
                     }
 
-                    if (byPlayer.WorldData.GetModData<bool>(ModConstants.RustyAmuletUsed) && amuletType != AmuletType.RustyGearAmulet)
-                    {
-                        ClearPlayersSpawnPoint(byPlayer);
-                        byPlayer.SendLocalisedMessage(0, "(Amulet Bed Spawn) You died without wearing the correct amulet! Spawn point removed.");
-                    }
+                    // We are assuming here that a temporal amulet is much harder to get, so lets not penalize the player for basically upgrading their amulet.
+                    // If we are here in the code, then the player used a rusty amulet to set their spawn point and they've
+                    // upgraded to a temporal amulet and are wearing that currently.
+                    return;
                 }
             }
         }
