@@ -40,11 +40,24 @@ namespace DM_AmuletBedSpawn
 
             if (block is not BlockBed) { return; }
 
+            // If the config option "AllowHayBeds" is false, then don't allow this player to set the spawn point
+            // if they are trying to set it on a hay bed.
+            string blockCode = $"{block.FirstCodePart()}-{block.FirstCodePart(1)}";
+            
+            if (!Config.AllowHayBeds && blockCode == "bed-hay") { return; }
+
+            // If the config option "AllowRustyGearAmulets" is false, and the player is wearing one or isn't wearing anything at all
+            // then don't allow this player to set the spawn point.
+            if (!Config.AllowRustyGearAmulets && (amuletType == AmuletType.RustyGearAmulet || amuletType == AmuletType.None)) { return; }
+
+            // Get the position of the head of the bed that the player is clicking on.
             var normalizedPosition = BetBedHeadPosition(block, sel.Position);
             var currentSpawnPos = player.GetSpawnPosition(false).AsBlockPos;
 
+            // If the player's current spawn point is already set to this bed's location, then do nothing.
             if (currentSpawnPos == normalizedPosition) { return; }
 
+            // Set the player's spawn point.
             player.SetSpawnPosition(new(normalizedPosition.X, normalizedPosition.Y, normalizedPosition.Z));
             player.WorldData.SetModData(ModConstants.SpawnSetByAmuletBedSpawnMod, true);
             player.WorldData.SetModData(ModConstants.BedIsMissing, false);
