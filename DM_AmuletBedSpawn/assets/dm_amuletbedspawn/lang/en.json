@@ -1,3 +1,4 @@
 {
-    "hello": "hello world!"
+  "blockhelp-bed-setspawn": "Set bed as spawn point",
+  "blockhelp-bed-spawnalreadyset": "This is your spawn point"
 }

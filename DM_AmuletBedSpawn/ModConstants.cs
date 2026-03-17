@@ -11,6 +11,7 @@ namespace DM_AmuletBedSpawn
         public const string SpawnSetByAmuletBedSpawnMod = "AmuletBedSpawn:SpawnSetByAmuletBedSpawnMod";
         public const string RustyAmuletUsed = "AmuletBedSpawn:RustyAmuletUsed";
         public const string TemporalAmuletUsed = "AmuletBedSpawn:TemporalAmuletUsed";
+        public const string AmuletBedSpawnPosition = "AmuletBedSpawn:SpawnPosition";
     }
 
     public enum AmuletType

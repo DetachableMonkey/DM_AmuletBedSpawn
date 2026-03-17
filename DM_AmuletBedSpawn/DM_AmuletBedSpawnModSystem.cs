@@ -1,5 +1,6 @@
 ﻿using DM_AmuletBedSpawn.Configuration;
 using HarmonyLib;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using Vintagestory.API.Client;
@@ -7,6 +8,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
+using Vintagestory.Client.NoObf;
 using Vintagestory.GameContent;
  
 
@@ -16,6 +18,7 @@ namespace DM_AmuletBedSpawn
     {
         internal static AmuletBedSpawnConfig Config { get; private set; }
         internal static readonly Harmony _harmony = new("amuletbedspawn");
+        internal static BlockPos CurrentSpawnPosition = new BlockPos(0, 0, 0);
 
         public override void StartServerSide(ICoreServerAPI api)
         {
@@ -31,6 +34,12 @@ namespace DM_AmuletBedSpawn
             base.StartServerSide(api);
         }
 
+        public override void StartClientSide(ICoreClientAPI api)
+        {
+            base.StartClientSide(api);
+        }
+
+
         /// <summary>
         /// Check if the block is a bed, and if it is, set the player's spawn point to the bed's location.
         /// </summary>
@@ -39,7 +48,7 @@ namespace DM_AmuletBedSpawn
             var block = player.Entity.World.BlockAccessor.GetBlock(sel.Position);
 
             if (block is not BlockBed) { return; }
-
+            
             // If the config option "AllowHayBeds" is false, then don't allow this player to set the spawn point
             // if they are trying to set it on a hay bed.
             string blockCode = $"{block.FirstCodePart()}-{block.FirstCodePart(1)}";
@@ -51,16 +60,37 @@ namespace DM_AmuletBedSpawn
             if (!Config.AllowRustyGearAmulets && (amuletType == AmuletType.RustyGearAmulet || amuletType == AmuletType.None)) { return; }
 
             // Get the position of the head of the bed that the player is clicking on.
-            var normalizedPosition = BetBedHeadPosition(block, sel.Position);
+            var normalizedPosition = GetBedHeadPosition(block, sel.Position);
             var currentSpawnPos = player.GetSpawnPosition(false).AsBlockPos;
 
-            // If the player's current spawn point is already set to this bed's location, then do nothing.
-            if (currentSpawnPos == normalizedPosition) { return; }
+            // If the player's current spawn point is already set to this bed's location...
+            if (currentSpawnPos == normalizedPosition) 
+            {
+                // Check to see if the WatchedAttributes for this playyer is null. If so, we need to initialize it so we can check it properly in the future.
+                var spawnPosTree = player.Entity.WatchedAttributes.GetTreeAttribute(ModConstants.AmuletBedSpawnPosition);
+
+                if (spawnPosTree == null)
+                {
+                    // Add this watched attribute.
+                    spawnPosTree = player.Entity.WatchedAttributes.GetOrAddTreeAttribute(ModConstants.AmuletBedSpawnPosition);
+                    spawnPosTree.SetInt("x", normalizedPosition.X);
+                    spawnPosTree.SetInt("y", normalizedPosition.Y);
+                    spawnPosTree.SetInt("z", normalizedPosition.Z);
+                    player.Entity.WatchedAttributes.MarkAllDirty();
+                }
+
+                return; 
+            }
 
             // Set the player's spawn point.
             player.SetSpawnPosition(new(normalizedPosition.X, normalizedPosition.Y, normalizedPosition.Z));
             player.WorldData.SetModData(ModConstants.SpawnSetByAmuletBedSpawnMod, true);
             player.WorldData.SetModData(ModConstants.BedIsMissing, false);
+            var posTree = player.Entity.WatchedAttributes.GetOrAddTreeAttribute(ModConstants.AmuletBedSpawnPosition);
+            posTree.SetInt("x", normalizedPosition.X);
+            posTree.SetInt("y", normalizedPosition.Y);
+            posTree.SetInt("z", normalizedPosition.Z);
+            player.Entity.WatchedAttributes.MarkAllDirty();
 
             if (amuletType == AmuletType.TemporalGearAmulet)
             {
@@ -74,7 +104,7 @@ namespace DM_AmuletBedSpawn
             }
 
             player.BroadcastPlayerData();
-            player.SendLocalisedMessage(0, $"(Amulet Bed Spawn) Spawn point has been set with your {amuletType.ToItemName().ToLowerInvariant()}.");
+            player.SendLocalisedMessage(0, $"[Amulet Bed Spawn] Spawn point has been set with your {amuletType.ToItemName().ToLowerInvariant()}.");
         }
 
         /// <summary>
@@ -82,7 +112,7 @@ namespace DM_AmuletBedSpawn
         /// </summary>
         public void OnBlockRemoved(BlockBed block, IWorldAccessor world, BlockPos pos)
         {
-            var normalizedPosition = BetBedHeadPosition(block, pos);
+            var normalizedPosition = GetBedHeadPosition(block, pos);
             var playersWithThisSpawn = world.AllPlayers.OfType<IServerPlayer>().Where(f => f.GetSpawnPosition(false).AsBlockPos == normalizedPosition).ToList();
 
             foreach (var player in playersWithThisSpawn)
@@ -90,7 +120,7 @@ namespace DM_AmuletBedSpawn
                 ClearPlayersSpawnPoint(player);
                 player.WorldData.SetModData(ModConstants.BedIsMissing, true);
                 player.BroadcastPlayerData();
-                player.SendLocalisedMessage(0, "(Amulet Bed Spawn) Your spawn point has been removed.");
+                player.SendLocalisedMessage(0, "[Amulet Bed Spawn] Your spawn point has been removed.");
             }
         }
 
@@ -101,7 +131,7 @@ namespace DM_AmuletBedSpawn
         /// <param name="amuletType">When this method returns, contains the <see cref="AmuletType"/> of the amulet found if the player is
         /// wearing one; otherwise, <see cref="AmuletType.None"/>.</param>
         /// <returns>true if the player is wearing a recognized amulet; otherwise, false.</returns>
-        public static bool PlayerIsWearingAmulet(IServerPlayer player, out AmuletType amuletType)
+        public static bool PlayerIsWearingAmulet(IPlayer player, out AmuletType amuletType)
         {
             amuletType = AmuletType.None;
 
@@ -186,7 +216,7 @@ namespace DM_AmuletBedSpawn
                     {
                         BreakPlayersAmulet(byPlayer, amuletType);
                         ClearPlayersSpawnPoint(byPlayer);
-                        byPlayer.SendLocalisedMessage(0, $"(Amulet Bed Spawn) Your {amuletType.ToItemName().ToLowerInvariant()} has broken! Spawn point removed.");
+                        byPlayer.SendLocalisedMessage(0, $"[Amulet Bed Spawn] Your {amuletType.ToItemName().ToLowerInvariant()} has broken! Spawn point removed.");
                     }
                 }
             }
@@ -236,7 +266,7 @@ namespace DM_AmuletBedSpawn
                 {
                     // This player isn't wearing any amulet at all. Penalize them by clearing their spawn point and send them a message.
                     ClearPlayersSpawnPoint(byPlayer);
-                    byPlayer.SendLocalisedMessage(0, "(Amulet Bed Spawn) You died without wearing your amulet! Spawn point removed.");
+                    byPlayer.SendLocalisedMessage(0, "[Amulet Bed Spawn] You died without wearing your amulet! Spawn point removed.");
                 }
                 else
                 {
@@ -245,8 +275,8 @@ namespace DM_AmuletBedSpawn
                     if (byPlayer.WorldData.GetModData<bool>(ModConstants.TemporalAmuletUsed) && amuletType != AmuletType.TemporalGearAmulet)
                     {
                         ClearPlayersSpawnPoint(byPlayer);
-                        byPlayer.SendLocalisedMessage(0, "(Amulet Bed Spawn) You died without wearing your temporal gear amulet!");
-                        byPlayer.SendLocalisedMessage(0, "(Amulet Bed Spawn) Spawn point removed.");
+                        byPlayer.SendLocalisedMessage(0, "[Amulet Bed Spawn] You died without wearing your temporal gear amulet!");
+                        byPlayer.SendLocalisedMessage(0, "[Amulet Bed Spawn] Spawn point removed.");
                         return;
                     }
 
@@ -265,13 +295,15 @@ namespace DM_AmuletBedSpawn
             player.WorldData.SetModData(ModConstants.BedIsMissing, false);
             player.WorldData.SetModData(ModConstants.TemporalAmuletUsed, false);
             player.WorldData.SetModData(ModConstants.RustyAmuletUsed, false);
+            player.Entity.WatchedAttributes.RemoveAttribute(ModConstants.AmuletBedSpawnPosition);
+            player.Entity.WatchedAttributes.MarkAllDirty();
             player.BroadcastPlayerData();
         }
 
         /// <summary>
         /// Returns the position of the head of the bed.
         /// </summary>
-        private static BlockPos BetBedHeadPosition(Block bed, BlockPos pos)
+        public static BlockPos GetBedHeadPosition(Block bed, BlockPos pos)
         {
             if (bed.Variant["part"] == "head") { return pos; }
 
