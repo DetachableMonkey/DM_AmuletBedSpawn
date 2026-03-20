@@ -34,7 +34,7 @@ namespace DM_AmuletBedSpawn.Configuration
             return api.LoadModConfig<AmuletBedSpawnConfig>(ModConstants.ConfigFileName);
         }
 
-        private static void SaveOrCreateConfig(ICoreAPI api, AmuletBedSpawnConfig config = default)
+        private static void SaveOrCreateConfig(ICoreAPI api, AmuletBedSpawnConfig? config = null)
         {
             api.StoreModConfig(config ?? new(), ModConstants.ConfigFileName);
         }

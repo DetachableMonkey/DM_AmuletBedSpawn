@@ -16,7 +16,7 @@ namespace DM_AmuletBedSpawn
 {
     public class DM_AmuletBedSpawnModSystem : ModSystem
     {
-        internal static AmuletBedSpawnConfig Config { get; private set; }
+        internal static AmuletBedSpawnConfig Config { get; private set; } = null!;
         internal static readonly Harmony _harmony = new("amuletbedspawn");
         internal static BlockPos CurrentSpawnPosition = new BlockPos(0, 0, 0);
 

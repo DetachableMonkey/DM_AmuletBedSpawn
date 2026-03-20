@@ -14,25 +14,34 @@ namespace DM_AmuletBedSpawn.Patches
         public static void Postfix(IWorldAccessor world, BlockSelection selection, IPlayer forPlayer, ref WorldInteraction[] __result)
         {
             if (world.Api.Side != EnumAppSide.Client) { return; }
+            if (forPlayer == null) { return; }
             if (forPlayer is not IClientPlayer clientPlayer) { return; }
 
-            if (DM_AmuletBedSpawnModSystem.PlayerIsWearingAmulet(clientPlayer, out AmuletType amuletType))
+            try
             {
-                BlockPos normalizedPosition = DM_AmuletBedSpawnModSystem.GetBedHeadPosition(selection.Block, selection.Position);
-                var spawnPosTree = clientPlayer.Entity.WatchedAttributes.GetTreeAttribute(ModConstants.AmuletBedSpawnPosition);
-
-                bool isCurrentSpawn = spawnPosTree != null
-                    && normalizedPosition.X == spawnPosTree.GetInt("x")
-                    && normalizedPosition.Y == spawnPosTree.GetInt("y")
-                    && normalizedPosition.Z == spawnPosTree.GetInt("z");
-
-                __result = __result.Append(new WorldInteraction
+                if (DM_AmuletBedSpawnModSystem.PlayerIsWearingAmulet(clientPlayer, out AmuletType amuletType))
                 {
-                    ActionLangCode = isCurrentSpawn
-                        ? "dm_amuletbedspawn:blockhelp-bed-spawnalreadyset"
-                        : "dm_amuletbedspawn:blockhelp-bed-setspawn",
-                    MouseButton = EnumMouseButton.Right
-                }); 
+                    BlockPos normalizedPosition = DM_AmuletBedSpawnModSystem.GetBedHeadPosition(selection.Block, selection.Position);
+                    var spawnPosTree = clientPlayer.Entity.WatchedAttributes.GetTreeAttribute(ModConstants.AmuletBedSpawnPosition);
+
+                    bool isCurrentSpawn = spawnPosTree != null
+                        && normalizedPosition.X == spawnPosTree.GetInt("x")
+                        && normalizedPosition.Y == spawnPosTree.GetInt("y")
+                        && normalizedPosition.Z == spawnPosTree.GetInt("z");
+
+                    __result = __result.Append(new WorldInteraction
+                    {
+                        ActionLangCode = isCurrentSpawn
+                            ? "dm_amuletbedspawn:blockhelp-bed-spawnalreadyset"
+                            : "dm_amuletbedspawn:blockhelp-bed-setspawn",
+                        MouseButton = EnumMouseButton.Right
+                    });
+                }
+            }
+            catch (System.Exception)
+            {
+
+                
             }
         }
     }
