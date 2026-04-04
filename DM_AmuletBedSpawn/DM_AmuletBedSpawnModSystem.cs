@@ -112,6 +112,8 @@ namespace DM_AmuletBedSpawn
         /// </summary>
         public void OnBlockRemoved(BlockBed block, IWorldAccessor world, BlockPos pos)
         {
+            if (!Config.BreakingBedRemovesSpawnPoint) { return; }
+
             var normalizedPosition = GetBedHeadPosition(block, pos);
             var playersWithThisSpawn = world.AllPlayers.OfType<IServerPlayer>().Where(f => f.GetSpawnPosition(false).AsBlockPos == normalizedPosition).ToList();
 
