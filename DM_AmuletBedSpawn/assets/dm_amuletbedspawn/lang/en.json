@@ -1,4 +1,17 @@
 {
+  "AmuletBedSpawnSettings": "Configure Amulet Bed Spawn Settings",
+  "AllowHayBeds": "Allow Hay Beds?",
+  "AllowHayBedsComment": "If set to false, hay beds cannot be used to set a player's spawn (regardless of the type of amulet being worn).",
+  "AllowRustyGearAmulets": "Allow Rusty Gear Amulets?",
+  "AllowRustyGearAmuletsComment": "If set to false, rusty gear amulets cannot be used to set a player's spawn (only temporal gear amulets can be used).",
+  "AmuletsCanBreakAfterRespawn": "Can Amulets Break After Respawn?",
+  "AmuletsCanBreakAfterRespawnComment": "If set to true, amulets will have a chance to break when a player respawns upon death.",
+  "BreakingBedRemovesSpawnPoint": "Breaking Bed Removes Spawn Point?",
+  "BreakingBedRemovesSpawnPointComment": "If set to false, when a player breaks the bed, the spawn point will not be removed.",
+  "RustyGearAmuletBreakChancePct": "Rusty Gear Amulet Break Chance (%)",
+  "RustyGearAmuletBreakChancePctComment": "The chance (%) that a rusty gear amulet will break when a player respawns upon death.",
+  "TemporalGearAmuletBreakChancePct": "Temporal Gear Amulet Break Chance (%)",
+  "TemporalGearAmuletBreakChancePctComment": "The chance (%) that a temporal gear amulet will break when a player respawns upon death.",
   "blockhelp-bed-setspawn": "Set bed as spawn point",
   "blockhelp-bed-spawnalreadyset": "This is your spawn point"
 }

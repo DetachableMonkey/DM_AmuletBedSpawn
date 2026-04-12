@@ -1,0 +1,55 @@
+{
+  "version": 0,
+  "file": "AmuletBedSpawn.json",
+  "patches": {},
+  "settings": [
+    {
+      "type": "separator",
+      "title": "AmuletBedSpawnSettings"
+    },
+    {
+      "code": "AllowHayBeds",
+      "comment": "If set to false, hay beds cannot be used to set a player's spawn (regardless of the type of amulet being worn).",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "code": "AllowRustyGearAmulets",
+      "comment": "If set to false, rusty gear amulets cannot be used to set a player's spawn (only temporal gear amulets can be used).",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "code": "AmuletsCanBreakAfterRespawn",
+      "comment": "If set to true, amulets will have a chance to break when a player respawns upon death.",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "code": "BreakingBedRemovesSpawnPoint",
+      "comment": "If set to false, when a player breaks the bed, the spawn point will not be removed.",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "code": "RustyGearAmuletBreakChancePct",
+      "comment": "The chance (%) that a rusty gear amulet will break when a player respawns upon death.",
+      "type": "int",
+      "default": 30,
+      "range": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "code": "TemporalGearAmuletBreakChancePct",
+      "comment": "The chance (%) that a temporal gear amulet will break when a player respawns upon death",
+      "type": "int",
+      "default": 5,
+      "range": {
+        "min": 0,
+        "max": 100
+      }
+    }
+  ]
+}
